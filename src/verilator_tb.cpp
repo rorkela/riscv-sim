@@ -1,38 +1,63 @@
 #include "Vtop.h"
 #include "verilated.h"
+#include "verilated_vcd_c.h" // 1. Include the tracing header
 #include <iostream>
-int cycle=0;
-void print_state(Vtop *top) {
-  std::cout<<std::hex<<cycle<<"\t"<<top->pc<<"\t"<<top->inst<<"\n";
 
+int cycle = 0;
+
+void print_state(Vtop *top) {
+  std::cout << std::hex << cycle << "\t" << top->pc << "\t" << top->inst << "\n";
 }
-void step(Vtop *top,VerilatedContext *contextp){
-  top->clk=1;
+
+void step(Vtop *top, VerilatedContext *contextp, VerilatedVcdC *tfp) {
+  // Falling edge tracking (before rising edge)
+  top->clk = 1;
   top->eval();
   contextp->timeInc(1);
-  top->clk=0;
+  if (tfp) tfp->dump(contextp->time()); // 2. Dump data to waveform
+
+  top->clk = 0;
   top->eval();
   contextp->timeInc(1);
+  if (tfp) tfp->dump(contextp->time()); // 3. Dump data to waveform
+
   cycle++;
   print_state(top);
 }
+
 void top_init(Vtop *top) {
-top->clk=0;
-top->reset=0;
+  top->clk = 0;
+  top->reset = 0;
 }
+
 int main(int argc, char **argv) {
   VerilatedContext *contextp = new VerilatedContext;
   contextp->commandArgs(argc, argv);
+  
+  // 4. Enable tracing in the context
+  contextp->traceEverOn(true); 
+
   Vtop *top = new Vtop{contextp};
 
-  //START
+  // 5. Initialize the trace object
+  VerilatedVcdC *tfp = new VerilatedVcdC;
+  top->trace(tfp, 99); // 99 means trace all hierarchies completely
+  tfp->open("waveform.vcd"); // The name of your output file
+
+  // START
   top_init(top);
-  top->reset=1;
-  step(top,contextp);
-  top->reset=0;
-  for(int i=0;i<20;i++)step(top,contextp);
+  top->reset = 1;
+  step(top, contextp, tfp); // Pass tfp to step
+  top->reset = 0;
+  
+  for (int i = 0; i < 100; i++) {
+    step(top, contextp, tfp); // Pass tfp to step
+  }
+
+  // 6. Clean up and close the waveform file
+  tfp->close();
+  delete tfp;
   delete top;
   delete contextp;
   return 0;
 }
-

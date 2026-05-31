@@ -7,6 +7,6 @@ inspect_elf:
 elf_to_hex:
 	riscv-none-elf-objcopy -O verilog temp_outputs/prog.elf temp_outputs/program.hex
 verilate:
-	verilator  --build --cc src/top.sv --exe src/verilator_tb.cpp -I./src 
+	verilator  --build --cc src/top.sv --exe src/verilator_tb.cpp -I./src  --trace
 run:
 	./obj_dir/Vtop
