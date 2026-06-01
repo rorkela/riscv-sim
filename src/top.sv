@@ -3,17 +3,23 @@ module top (
     input wire clk,
     input wire reset,
     output reg [31:0] pc,
-    output wire [31:0] inst
+    output wire [31:0] inst,
+    output logic halt
 );
   initial begin
-    pc = 32'd0;
+    pc = 32'h80000000;
   end
-
-  inst_mem inst_mem_1 (
-      .address(pc),
-      .instruction(inst)
+  //Memory
+  logic [31:0] read_data;
+  mem mem_1 (
+      .clk(clk),
+      .addr1(pc),
+      .addr2(alu_out),
+      .data1(inst),
+      .data2(read_data),
+      .write_data(rd2),
+      .ctrl(ctrl)
   );
-
   //ID
   control_sig_t ctrl;
   logic [31:0] imm;
@@ -54,17 +60,10 @@ module top (
       .alu_out(alu_out)
   );
 
-  logic [31:0] read_data;
-  data_mem data_mem_1 (
-      .clk(clk),
-      .address(alu_out),
-      .write_data(rd2),
-      .ctrl(ctrl),
-      .read_data(read_data)
-  );
 
   //reg write data mux
   always_comb begin
+
     case (ctrl.result_src)
       2'b00:   reg_write_data = alu_out;
       2'b01:   reg_write_data = read_data;
@@ -77,9 +76,12 @@ module top (
 
   end
   //PC Update
+  assign halt = inst == 32'h00000073;
   always_ff @(posedge clk) begin
-    if (reset) pc <= 32'd0;
-    else begin
+    if (reset) pc <= 32'd80000000;
+    else if (halt) begin
+      pc <= pc;
+    end else begin
       case (ctrl.pc_type)
         2'b00:   pc <= pc + 32'd4;
         2'b01:   pc <= branch_taken ? (imm + pc) : (pc + 32'd4);
