@@ -17,13 +17,13 @@ void step(Vtop *top, VerilatedContext *contextp, VerilatedVcdC *tfp) {
   top->clk = 1;
   top->eval();
   contextp->timeInc(1);
-  //if (tfp) tfp->dump(contextp->time()); // 2. Dump data to waveform
+  if (tfp) tfp->dump(contextp->time()); // 2. Dump data to waveform
 
   //print_state(top);
   top->clk = 0;
   top->eval();
   contextp->timeInc(1);
-  //if (tfp) tfp->dump(contextp->time()); // 3. Dump data to waveform
+  if (tfp) tfp->dump(contextp->time()); // 3. Dump data to waveform
 
   cycle++;
 }
@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
   // 5. Initialize the trace object
   VerilatedVcdC *tfp = new VerilatedVcdC;
   top->trace(tfp, 99); // 99 means trace all hierarchies completely
-  //tfp->open("waveform.vcd"); // The name of your output file
+  tfp->open("waveform.vcd"); // The name of your output file
 
   // START
   top_init(top);
@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
   std::cout << std::hex << result<<"|"<<(result==1?"PASS":"------FAIL-----") <<"\n";
 
   // 6. Clean up and close the waveform file
-  //tfp->close();
+  tfp->close();
   delete tfp;
   delete top;
   delete contextp;
