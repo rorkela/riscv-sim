@@ -1,4 +1,0 @@
-CompileFlags:
-  Add:
-    - "-Iobj_dir"
-    - "-I/usr/share/verilator/include"
