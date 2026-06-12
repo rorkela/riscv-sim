@@ -14,7 +14,7 @@ module top (
   mem_wb_t memwb_w, memwb_r;
   assign {idex_w.pc, idex_w.inst} = {ifid_r.pc, ifid_r.inst};
   assign {exmem_w.rs1,exmem_w.rs2,exmem_w.pc, exmem_w.inst, exmem_w.ctrl, exmem_w.rd, exmem_w.rd2} = {
-    idex_r.rs1, idex_r.rs2, idex_r.pc, idex_r.inst, idex_r.ctrl, idex_r.rd, idex_r.rd2
+    idex_r.rs1, idex_r.rs2, idex_r.pc, idex_r.inst, idex_r.ctrl, idex_r.rd, ex_forwarded_rd2
   };
 
   assign {memwb_w.rs1, memwb_w.rs2,memwb_w.pc, memwb_w.inst, memwb_w.ctrl, memwb_w.rd, memwb_w.alu_out} = {
@@ -29,12 +29,7 @@ module top (
   logic [31:0] mem_write_data;
   always_comb begin
     if (memwb_r.ctrl.reg_write & memwb_r.rd != 0 & memwb_r.rd == exmem_r.rs2) begin
-      case (memwb_r.ctrl.result_src)
-        2'b00:   mem_write_data = memwb_r.alu_out;
-        2'b01:   mem_write_data = memwb_r.read_data;
-        2'b10:   mem_write_data = memwb_r.pc + 4;
-        default: mem_write_data = memwb_r.alu_out;
-      endcase
+      mem_write_data = reg_write_data;
     end else begin
       mem_write_data = exmem_r.rd2;
     end
@@ -86,51 +81,34 @@ module top (
       stall = 1'b0;
     end
   end
-
+  logic [31:0] ex_forwarded_rd2;
+  logic [31:0] ex_forwarded_rd1;
   always_comb begin
-    if (idex_r.ctrl.alu_src1) begin
-      alu_a = idex_r.pc;
+    if (exmem_r.ctrl.reg_write & (exmem_r.rd != 0) & (exmem_r.rd == idex_r.rs1)) begin
+      case (exmem_r.ctrl.result_src)
+        2'b00:   ex_forwarded_rd1 = exmem_r.alu_out;
+        2'b10:   ex_forwarded_rd1 = exmem_r.pc + 4;
+        default: ex_forwarded_rd1 = exmem_r.alu_out;
+      endcase
+    end else if (memwb_r.ctrl.reg_write & memwb_r.rd != 0 & memwb_r.rd == idex_r.rs1) begin
+      ex_forwarded_rd1 = reg_write_data;
     end else begin
-      if (exmem_r.ctrl.reg_write & (exmem_r.rd != 0) & (exmem_r.rd == idex_r.rs1)) begin
-        case (exmem_r.ctrl.result_src)
-          2'b00:   alu_a = exmem_r.alu_out;
-          2'b10:   alu_a = exmem_r.pc + 4;
-          default: alu_a = exmem_r.alu_out;
-        endcase
-      end else if (memwb_r.ctrl.reg_write & memwb_r.rd != 0 & memwb_r.rd == idex_r.rs1) begin
-        case (memwb_r.ctrl.result_src)
-          2'b00:   alu_a = memwb_r.alu_out;
-          2'b01:   alu_a = memwb_r.read_data;
-          2'b10:   alu_a = memwb_r.pc + 4;
-          default: alu_a = memwb_r.alu_out;
-        endcase
-      end else begin
-        alu_a = idex_r.rd1;
-      end
+      ex_forwarded_rd1 = idex_r.rd1;
     end
-    if (idex_r.ctrl.alu_src2) begin
-      alu_b = idex_r.imm;
+    if (exmem_r.ctrl.reg_write & (exmem_r.rd != 0) & (exmem_r.rd == idex_r.rs2)) begin
+      case (exmem_r.ctrl.result_src)
+        2'b00:   ex_forwarded_rd2 = exmem_r.alu_out;
+        2'b10:   ex_forwarded_rd2 = exmem_r.pc + 4;
+        default: ex_forwarded_rd2 = exmem_r.alu_out;
+      endcase
+    end else if (memwb_r.ctrl.reg_write & memwb_r.rd != 0 & memwb_r.rd == idex_r.rs2) begin
+      ex_forwarded_rd2 = reg_write_data;
     end else begin
-      if (exmem_r.ctrl.reg_write & (exmem_r.rd != 0) & (exmem_r.rd == idex_r.rs2)) begin
-        case (exmem_r.ctrl.result_src)
-          2'b00:   alu_b = exmem_r.alu_out;
-          2'b10:   alu_b = exmem_r.pc + 4;
-          default: alu_b = exmem_r.alu_out;
-        endcase
-      end else if (memwb_r.ctrl.reg_write & memwb_r.rd != 0 & memwb_r.rd == idex_r.rs2) begin
-        case (memwb_r.ctrl.result_src)
-          2'b00:   alu_b = memwb_r.alu_out;
-          2'b01:   alu_b = memwb_r.read_data;
-          2'b10:   alu_b = memwb_r.pc + 4;
-          default: alu_b = memwb_r.alu_out;
-        endcase
-      end else begin
-        alu_b = idex_r.rd2;
-      end
+      ex_forwarded_rd2 = idex_r.rd2;
     end
   end
-  //assign alu_a = (idex_r.ctrl.alu_src1) ? idex_r.pc : idex_r.rd1;
-  //assign alu_b = (idex_r.ctrl.alu_src2) ? idex_r.imm : idex_r.rd2;
+  assign alu_a = idex_r.ctrl.alu_src1 ? idex_r.pc : ex_forwarded_rd1;
+  assign alu_b = (idex_r.ctrl.alu_src2) ? idex_r.imm : ex_forwarded_rd2;
   alu alu_1 (
       .a(alu_a),
       .b(alu_b),
@@ -179,18 +157,18 @@ module top (
     memwb_r <= memwb_w;
   end
   //PC Update
-  assign halt = memwb_r.inst == 32'h00000073;
+  assign halt = inst == 32'h00000073;
   always_ff @(posedge clk) begin
     if (reset) pc <= 32'h80000000;
-    else if (halt | stall) begin
+    else if (stall) begin
       pc <= pc;
     end else begin
       case (idex_r.ctrl.pc_type)
-        2'b00:   pc <= pc + 32'd4;
+        2'b00:   pc <= halt ? pc : (pc + 32'd4);
         2'b01:   pc <= alu_branch_taken ? (idex_r.imm + idex_r.pc) : (pc + 32'd4);
         2'b10:   pc <= idex_r.imm + idex_r.pc;
         2'b11:   pc <= exmem_w.alu_out;
-        default: pc <= pc + 32'd4;
+        default: pc <= halt ? pc : (pc + 32'd4);
       endcase
 
     end

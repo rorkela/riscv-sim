@@ -32,3 +32,9 @@ run_tests:
 	done
 
 assrun: verilate compile_ass elf_to_hex run gtkwave
+
+
+dhrystone:
+	verilator --build --cc src/top.sv --exe src/dhrystone.cpp -I./src --trace
+	riscv-none-elf-objcopy -O verilog --change-addresses -0x80000000 prog/dhrystone.riscv temp_outputs/program.hex
+	./obj_dir/Vtop

@@ -10,8 +10,13 @@ module reg_file (
     output logic [31:0] rd2
 );
   logic [31:0] regfile[32];
-  assign rd1 = regfile[rs1];
-  assign rd2 = regfile[rs2];
+  always_comb begin
+    if (reg_write && (rd != 0) && (rd == rs1)) rd1 = wd;
+    else rd1 = regfile[rs1];
+
+    if (reg_write && (rd != 0) && (rd == rs2)) rd2 = wd;
+    else rd2 = regfile[rs2];
+  end
   integer i;
   always_ff @(posedge clk) begin
     if (reset) begin
