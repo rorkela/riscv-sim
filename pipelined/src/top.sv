@@ -157,18 +157,18 @@ module top (
     memwb_r <= memwb_w;
   end
   //PC Update
-  assign halt = inst == 32'h00000073;
+  assign halt = memwb_r.inst == 32'h00000073;
   always_ff @(posedge clk) begin
     if (reset) pc <= 32'h80000000;
     else if (stall) begin
       pc <= pc;
     end else begin
       case (idex_r.ctrl.pc_type)
-        2'b00:   pc <= halt ? pc : (pc + 32'd4);
+        2'b00:   pc <= (inst == 32'h00000073) ? pc : (pc + 32'd4);
         2'b01:   pc <= alu_branch_taken ? (idex_r.imm + idex_r.pc) : (pc + 32'd4);
         2'b10:   pc <= idex_r.imm + idex_r.pc;
         2'b11:   pc <= exmem_w.alu_out;
-        default: pc <= halt ? pc : (pc + 32'd4);
+        default: pc <= (inst == 32'h00000073) ? pc : (pc + 32'd4);
       endcase
 
     end

@@ -88,15 +88,21 @@ int main(int argc, char **argv) {
   top->reset = 1;
   step(top, contextp, tfp); // Pass tfp to step
   top->reset = 0;
-
-  for (int i = 0; i < 2000; i++) {
+  int i;
+  int nop_count=0;
+  for (i = 0; i < 30000000; i++) {
     step(top, contextp, tfp); // Pass tfp to step
-    // if(top->halt) break;
+    if(top->rootp->top__DOT__memwb_r[1]==0) nop_count++;
+    if(top->halt) break;
   }
-  int result = top->rootp->top__DOT__reg_file_1__DOT__regfile[3];
-  std::cout << std::hex << result << "|"
-            << (result == 1 ? "PASS" : "------FAIL-----") << "\n";
+int r3 = top->rootp->top__DOT__reg_file_1__DOT__regfile[3];
+int r10 = top->rootp->top__DOT__reg_file_1__DOT__regfile[10];
 
+std::cout << "reg[3] (gp)  = 0x" << std::hex << r3  << " (" << std::dec << r3  << ")\n";
+std::cout << "reg[10] (a0) = 0x" << std::hex << r10 << " (" << std::dec << r10 << ")\n";
+std::cout << "Total Cycles = " << std::dec << i << "\n";
+  std::cout << "NOPs =" << std::dec << nop_count <<  "\n";
+  std::cout << "CPI =" << ((double)i)/((double)(i-nop_count))<<"\n";
 // 6. Clean up and close the waveform file
 #ifdef VCD_out
   tfp->close();
