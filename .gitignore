@@ -1,0 +1,5 @@
+waveform.vcd
+.cache/
+debug.txt
+temp_outputs/
+obj_dir/
