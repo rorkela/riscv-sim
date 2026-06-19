@@ -90,9 +90,10 @@ int main(int argc, char **argv) {
   top->reset = 0;
   int i;
   int nop_count=0;
-  for (i = 0; i < 30000000; i++) {
+  for (i = 0; i < 1000000000; i++) {
     step(top, contextp, tfp); // Pass tfp to step
     if(top->rootp->top__DOT__memwb_r[1]==0) nop_count++;
+    //if(i%1==0) std::cout << std::hex <<top->pc << "\n";
     if(top->halt) break;
   }
 int r3 = top->rootp->top__DOT__reg_file_1__DOT__regfile[3];

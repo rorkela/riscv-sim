@@ -8,13 +8,13 @@ module mem (
     input logic [31:0] write_data,
     input control_sig_t ctrl
 );
-  logic [7:0] mem[65536];
+  logic [7:0] mem[524288];
   initial begin
     $readmemh("temp_outputs/program.hex", mem);
   end
-  logic [15:0] a1, a2;
-  assign a1 = addr1[15:0];
-  assign a2 = addr2[15:0];
+  logic [18:0] a1, a2;
+  assign a1 = addr1[18:0];
+  assign a2 = addr2[18:0];
   assign data1 = {mem[a1+3], mem[a1+2], mem[a1+1], mem[a1]};
   always_comb begin
     case (ctrl.funct3)

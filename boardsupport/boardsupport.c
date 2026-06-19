@@ -11,8 +11,9 @@ void _start(void) {
         :
         : "memory"
     );
+    __asm__ volatile ("ecall");
 }
 
 void initialise_board() {}
 void start_trigger() { __asm__ volatile ("nop"); }
-void stop_trigger() { __asm__ volatile ("ecall"); }
+void stop_trigger() { __asm__ volatile ("nop"); }
