@@ -47,5 +47,5 @@ assrun: verilate compile_ass elf_to_hex run gtkwave
 BENCHMARK?=crc32
 compile_benchmark:
 	cd $(EMBENCH) && \
-	scons --config-dir=$(abspath $(BOARDSUPPORT)) cc=$(RISCV_PREFIX)gcc cflags='-fdata-sections -ffunction-sections -mabi=ilp32 -march=rv32i' ldflags='-Wl,-gc-sections -Wl,--undefined=_start -mabi=ilp32 -nostartfiles -T$${CONFIG_DIR}/link.ld' user_libs=-lm bd/src/$(BENCHMARK)/$(BENCHMARK)
+	scons --config-dir=$(abspath $(BOARDSUPPORT)) cc=$(RISCV_PREFIX)gcc cflags='-fdata-sections -ffunction-sections -mabi=ilp32 -march=rv32i' ldflags='-Wl,-gc-sections -Wl,--undefined=_start -mabi=ilp32 -march=rv32i -nostartfiles -T$${CONFIG_DIR}/link.ld' user_libs=-lm bd/src/$(BENCHMARK)/$(BENCHMARK)
 	$(RISCV_PREFIX)objcopy -O verilog $(EMBENCH)/bd/src/$(BENCHMARK)/$(BENCHMARK) temp_outputs/program.hex 
