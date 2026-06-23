@@ -12,19 +12,32 @@ module top (
   id_ex_t idex_w, idex_r;
   ex_mem_t exmem_w, exmem_r;
   mem_wb_t memwb_w, memwb_r;
-  assign {idex_w.pc, idex_w.inst} = {ifid_r.pc, ifid_r.inst};
-  assign {exmem_w.rs1,exmem_w.rs2,exmem_w.pc, exmem_w.inst, exmem_w.ctrl, exmem_w.rd, exmem_w.rd2} = {
-    idex_r.rs1, idex_r.rs2, idex_r.pc, idex_r.inst, idex_r.ctrl, idex_r.rd, ex_forwarded_rd2
+  assign {idex_w.pc, idex_w.inst, idex_w.compressed} = {ifid_r.pc, ifid_r.inst, ifid_r.compressed};
+  assign {exmem_w.rs1,exmem_w.rs2,exmem_w.pc, exmem_w.inst, exmem_w.ctrl, exmem_w.rd, exmem_w.rd2, exmem_w.compressed} = {
+    idex_r.rs1,
+    idex_r.rs2,
+    idex_r.pc,
+    idex_r.inst,
+    idex_r.ctrl,
+    idex_r.rd,
+    ex_forwarded_rd2,
+    idex_r.compressed
   };
 
-  assign {memwb_w.rs1, memwb_w.rs2,memwb_w.pc, memwb_w.inst, memwb_w.ctrl, memwb_w.rd, memwb_w.alu_out} = {
-    exmem_r.rs1, exmem_r.rs2, exmem_r.pc, exmem_r.inst, exmem_r.ctrl, exmem_r.rd, exmem_r.alu_out
+  assign {memwb_w.rs1, memwb_w.rs2,memwb_w.pc, memwb_w.inst, memwb_w.ctrl, memwb_w.rd, memwb_w.alu_out, memwb_w.compressed} = {
+    exmem_r.rs1,
+    exmem_r.rs2,
+    exmem_r.pc,
+    exmem_r.inst,
+    exmem_r.ctrl,
+    exmem_r.rd,
+    exmem_r.alu_out,
+    exmem_r.compressed
   };
   initial begin
     pc = 32'h80000000;
   end
   assign ifid_w.pc = pc;
-  assign inst = ifid_w.inst;
   //Memory
   logic [31:0] mem_write_data;
   always_comb begin
@@ -39,10 +52,16 @@ module top (
       .clk(clk),
       .addr1(pc),
       .addr2(exmem_r.alu_out),
-      .data1(ifid_w.inst),
+      .data1(inst),
       .data2(memwb_w.read_data),
       .write_data(mem_write_data),
       .ctrl(exmem_r.ctrl)
+  );
+
+  decompressor decompresser_1 (
+      .inst(inst),
+      .dinst(ifid_w.inst),
+      .compressed(ifid_w.compressed)
   );
   //ID
   logic [4:0] id_rs1, id_rs2;
@@ -87,7 +106,7 @@ module top (
     if (exmem_r.ctrl.reg_write & (exmem_r.rd != 0) & (exmem_r.rd == idex_r.rs1)) begin
       case (exmem_r.ctrl.result_src)
         2'b00:   ex_forwarded_rd1 = exmem_r.alu_out;
-        2'b10:   ex_forwarded_rd1 = exmem_r.pc + 4;
+        2'b10:   ex_forwarded_rd1 = exmem_r.pc + (exmem_r.compressed ? 2 : 4);
         default: ex_forwarded_rd1 = exmem_r.alu_out;
       endcase
     end else if (memwb_r.ctrl.reg_write & memwb_r.rd != 0 & memwb_r.rd == idex_r.rs1) begin
@@ -98,7 +117,7 @@ module top (
     if (exmem_r.ctrl.reg_write & (exmem_r.rd != 0) & (exmem_r.rd == idex_r.rs2)) begin
       case (exmem_r.ctrl.result_src)
         2'b00:   ex_forwarded_rd2 = exmem_r.alu_out;
-        2'b10:   ex_forwarded_rd2 = exmem_r.pc + 4;
+        2'b10:   ex_forwarded_rd2 = exmem_r.pc + (exmem_r.compressed ? 2 : 4);
         default: ex_forwarded_rd2 = exmem_r.alu_out;
       endcase
     end else if (memwb_r.ctrl.reg_write & memwb_r.rd != 0 & memwb_r.rd == idex_r.rs2) begin
@@ -123,7 +142,7 @@ module top (
     case (memwb_r.ctrl.result_src)
       2'b00:   reg_write_data = memwb_r.alu_out;
       2'b01:   reg_write_data = memwb_r.read_data;
-      2'b10:   reg_write_data = memwb_r.pc + 4;
+      2'b10:   reg_write_data = memwb_r.pc + (memwb_r.compressed ? 2 : 4);
       default: reg_write_data = memwb_r.alu_out;
     endcase
   end
@@ -164,11 +183,12 @@ module top (
       pc <= pc;
     end else begin
       case (idex_r.ctrl.pc_type)
-        2'b00:   pc <= (inst == 32'h00000073) ? pc : (pc + 32'd4);
-        2'b01:   pc <= alu_branch_taken ? (idex_r.imm + idex_r.pc) : (pc + 32'd4);
-        2'b10:   pc <= idex_r.imm + idex_r.pc;
-        2'b11:   pc <= exmem_w.alu_out;
-        default: pc <= (inst == 32'h00000073) ? pc : (pc + 32'd4);
+        2'b00: pc <= (inst == 32'h00000073) ? pc : (pc + (ifid_w.compressed ? 2 : 4));
+        2'b01:
+        pc <= alu_branch_taken ? (idex_r.imm + idex_r.pc) : (pc + (ifid_w.compressed ? 2 : 4));
+        2'b10: pc <= idex_r.imm + idex_r.pc;
+        2'b11: pc <= exmem_w.alu_out;
+        default: pc <= (inst == 32'h00000073) ? pc : (pc + (ifid_w.compressed ? 2 : 4));
       endcase
 
     end

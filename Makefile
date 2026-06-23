@@ -10,19 +10,19 @@ EMBENCH?=../embench-iot
 RISCV_PREFIX?=riscv-none-elf-
 
 compile_prog: prog/p1.c
-	$(RISCV_PREFIX)-gcc -march=rv32i -mabi=ilp32 -nostdlib -T prog/linker.ld prog/p1.c -o temp_outputs/prog.elf
+	$(RISCV_PREFIX)gcc -march=rv32i -mabi=ilp32 -nostdlib -T prog/linker.ld prog/p1.c -o temp_outputs/prog.elf
 
 compile_ass: prog/p1.s
-	$(RISCV_PREFIX)-gcc -march=rv32i -mabi=ilp32 -nostdlib -T prog/linker.ld prog/p1.s -o temp_outputs/prog.elf
+	$(RISCV_PREFIX)gcc -march=rv32i -mabi=ilp32 -nostdlib -T prog/linker.ld prog/p1.s -o temp_outputs/prog.elf
 
 inspect_elf: 
-	$(RISCV_PREFIX)-objdump -d temp_outputs/prog.elf
+	$(RISCV_PREFIX)objdump -d temp_outputs/prog.elf
 
 elf_to_hex:
-	$(RISCV_PREFIX)-objcopy -O verilog temp_outputs/prog.elf temp_outputs/program.hex
+	$(RISCV_PREFIX)objcopy -O verilog temp_outputs/prog.elf temp_outputs/program.hex
 
 verilate:
-	verilator --build --cc $(TOP_PATH) --exe $(TB_PATH) -I$(DESIGN_PATH) --trace
+	verilator --build --cc $(TOP_PATH) --exe $(TB_PATH) -I$(DESIGN_PATH) --trace -j$(nproc)
 
 gtkwave:
 	gtkwave waveform.vcd
@@ -33,6 +33,15 @@ TEST_DIR := $(RISCV_TESTS)/isa
 
 run_tests:
 	@for test in $(filter-out %.dump,$(wildcard $(TEST_DIR)/rv32ui-p-*)); do \
+		echo "Running $$(basename $$test)"; \
+		riscv-none-elf-objcopy \
+			-O verilog \
+			--change-addresses -0x80000000 \
+			$$test \
+			temp_outputs/program.hex || exit 1; \
+		$(MAKE) run || exit 1; \
+	done
+	@for test in $(filter-out %.dump,$(wildcard $(TEST_DIR)/rv32uc-p-*)); do \
 		echo "Running $$(basename $$test)"; \
 		riscv-none-elf-objcopy \
 			-O verilog \

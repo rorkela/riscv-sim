@@ -11,8 +11,8 @@ int cycle = 0;
 void print_state(Vtop *top) {
   auto *r = top->rootp;
 
-  uint32_t ifid_pc = (uint32_t)(r->top__DOT__ifid_r);
-  uint32_t ifid_inst = (uint32_t)(r->top__DOT__ifid_r >> 32);
+  uint32_t ifid_pc = (r->top__DOT__ifid_r[0]);
+  uint32_t ifid_inst = (r->top__DOT__ifid_r[1]);
 
   uint32_t idex_pc = r->top__DOT__idex_r[0];
   uint32_t idex_inst = r->top__DOT__idex_r[1];
