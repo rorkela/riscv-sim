@@ -11,6 +11,7 @@ void _start(void) {
         :
         : "memory"
     );
+    __asm__ volatile ("addi gp,x0,2");
     __asm__ volatile ("ecall");
 }
 

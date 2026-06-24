@@ -238,6 +238,30 @@ module decompressor (
             else if (cinst[6:2] == 5'b0) dinst = {12'b0, cinst[11:7], 3'b000, 5'b00001, 7'b1100111};
             else dinst = {7'b0000000, cinst[6:2], cinst[11:7], 3'b0, cinst[11:7], 7'b0110011};
           end
+          6'b010???:
+          dinst = {
+            4'b0000,
+            cinst[3:2],
+            cinst[12],
+            cinst[6:4],
+            2'b00,
+            5'b00010,
+            3'b010,
+            cinst[11:7],
+            7'b0000011
+          };
+          6'b110???:
+          dinst = {
+            4'b0000,
+            cinst[8:7],
+            cinst[12],
+            cinst[6:2],
+            5'b00010,
+            3'b010,
+            cinst[11:9],
+            2'b00,
+            7'b0100011
+          };
           default: dinst = 32'd0;
         endcase
       end
