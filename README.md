@@ -1,9 +1,12 @@
 # RV32IZca (SystemVerilog+Verilator)
-Pipelined Implmentation of RV32IZca in SystemVerilog and verified using Verilator.
-- Supports Zca extension through decompression in IF stage
-- Integrated `riscv-tests` for verifying the functionality of every instruction
-- Integrated `embench-iot` for running benchmarks on the processor
-- Used a Verilator-based testbench environment
+Pipelined implementation of RV32IZca in SystemVerilog and verified using Verilator.
+
+## Features
+- 5-stage pipelined RV32I processor
+- Zca compressed instruction support via IF-stage decompression
+- Verilator simulation environment
+- riscv-tests integration
+- Embench-IoT benchmark support
 
 ## Instructions
 1. Configure the `Makefile` to update `RISCV_TESTS` and `EMBENCH` variables to path to their cloned repository. Also use appropriate `RISCV_PREFIX`
@@ -11,7 +14,7 @@ Pipelined Implmentation of RV32IZca in SystemVerilog and verified using Verilato
 3. Use `make verilate` to compile the core. (Pass `TARGET_DESIGN` as required)
 General Programs:
 ```bash
-make compile_prog //Not tested as of current build
+make compile_prog #Not tested as of current build
 make elf_to_hex
 make run 
 ```
@@ -32,7 +35,7 @@ make run
 - [x] Rv32I Single Cycle Complete ISA test (riscv-tests)
 - [x] RV32I Pipelined
 - [x] RV32I Pipelined Complete ISA test (riscv-tests)
-- [x] RV32I Pipelined embench setup + testrun
+- [x] RV32I Pipelined embench setup + test runs
 - [x] RV32I Embench setup more formalized
 - [x] RV32IZca tests + Benchmark
 - [x] Mult unit (Booth Multiplier)
