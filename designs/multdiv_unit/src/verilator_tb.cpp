@@ -4,6 +4,7 @@
 #include "Vtop___024root.h"
 #include "verilated.h"
 #include "verilated_vcd_c.h" // 1. Include the tracing header
+#include <format>
 #include <iostream>
 
 int cycle = 0;
@@ -39,7 +40,28 @@ void top_init(Vtop *top) {
   top->clk = 0;
   top->reset = 0;
 }
+void test(Vtop *top, VerilatedContext *contextp, VerilatedVcdC *tfp, uint32_t a, uint32_t b, int operation){
 
+  top->a=a;
+  top->b=b;
+  top->mult_trig=1;
+  top->op=operation;
+  step(top, contextp, tfp);
+  top->mult_trig=0;
+  for (int i=0;i<100;i++){ 
+    if(top->busy)
+    step(top,contextp,tfp);
+    else break;
+  }
+    step(top,contextp,tfp);
+
+  uint64_t expected;
+  if(operation==1) expected=(int64_t)a*(int64_t)b;
+  else expected=(u_int64_t)a*(u_int64_t)b;
+  std::cout<<std::format("{}({})\t{}({})\t{}({})\t{}({})\n",top->a, (int32_t)(top->a),top->b, (int32_t)(top->b),top->out, (int64_t)(top->out),expected, (int64_t)(expected)); 
+
+
+}
 int main(int argc, char **argv) {
   VerilatedContext *contextp = new VerilatedContext;
   contextp->commandArgs(argc, argv);
@@ -62,18 +84,14 @@ int main(int argc, char **argv) {
   top->reset = 1;
   step(top, contextp, tfp); // Pass tfp to step
   top->reset = 0;
-  top->a=1<<31;
-  top->b=1;
-  top->mult_trig=1;
-  top->op=0;
   step(top, contextp, tfp);
-  top->mult_trig=0;
-  for (int i=0;i<100;i++){ 
-    if(top->busy)
-    step(top,contextp,tfp);
-    else break;
-  }
-  std::cout<<top->a<<" "<<top->b<<" "<<top->out<<" "<<top->a*top->b<<"\n"; 
+  // TESTS
+  test(top,contextp,tfp,-5,10,1);
+  test(top,contextp,tfp,5,10,1);
+  test(top,contextp,tfp,5,10,2);
+  test(top,contextp,tfp,-5,-10,1);
+  test(top,contextp,tfp,5,-10,1);
+  test(top,contextp,tfp,-5,10,1);
 #ifdef VCD_out
   tfp->close();
 #endif

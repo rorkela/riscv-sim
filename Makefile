@@ -22,7 +22,7 @@ elf_to_hex:
 	$(RISCV_PREFIX)objcopy -O verilog temp_outputs/prog.elf temp_outputs/program.hex
 
 verilate:
-	verilator --build --cc $(TOP_PATH) --exe $(TB_PATH) -I$(DESIGN_PATH) --trace -j$(nproc)
+	verilator --build --cc $(TOP_PATH) --exe $(TB_PATH) -I$(DESIGN_PATH) --trace -j$(nproc) -CFLAGS "-std=c++20"
 
 gtkwave:
 	gtkwave waveform.vcd

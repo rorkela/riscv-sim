@@ -6,7 +6,7 @@ module top (
     input logic [1:0] op,  //00 - not mult | 01 - SS mult | 10 - UU mult
     input logic mult_trig,
     output logic busy,
-    output logic [31:0] out
+    output logic [63:0] out
 );
   mult mult_1 (
       clk,
