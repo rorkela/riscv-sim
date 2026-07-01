@@ -19,36 +19,57 @@ module inst_dec (
   //For R and I type, expected ALU_OP from funct3 and funct7 generation
   alu_ctrl_t alu_op_RI;
   always_comb begin
-    case (funct3)
-      3'b000: begin
-        alu_op_RI = (op == 7'b0010011) ? (ALU_ADD) : ((funct7[5]) ? (ALU_SUB) : (ALU_ADD));
-      end
-      3'b001: begin
-        alu_op_RI = ALU_SLL;
-      end
-      3'b010: begin
-        alu_op_RI = ALU_SLT;
-      end
-      3'b011: begin
-        alu_op_RI = ALU_SLTU;
-      end
-      3'b100: begin
-        alu_op_RI = ALU_XOR;
-      end
-      3'b101: begin
-        alu_op_RI = funct7[5] ? ALU_SRA : ALU_SRL;
-      end
-      3'b110: begin
-        alu_op_RI = ALU_OR;
-      end
-      3'b111: begin
-        alu_op_RI = ALU_AND;
-      end
-      default: begin
-        alu_op_RI = ALU_ADD;
-      end
+    if (funct7[0] == 1'b1 && op == 7'd51) begin
+      case (funct3)
+        3'b000: begin
+          alu_op_RI = MUL;
+        end
+        3'b001: begin
+          alu_op_RI = MUL_H;
+        end
+        3'b010: begin
+          alu_op_RI = MUL_HSU;
+        end
+        3'b011: begin
+          alu_op_RI = MUL_HU;
+        end
+        default: begin
+          alu_op_RI = ALU_ADD;
+        end
 
-    endcase
+      endcase
+    end else begin
+      case (funct3)
+        3'b000: begin
+          alu_op_RI = (op == 7'b0010011) ? (ALU_ADD) : ((funct7[5]) ? (ALU_SUB) : (ALU_ADD));
+        end
+        3'b001: begin
+          alu_op_RI = ALU_SLL;
+        end
+        3'b010: begin
+          alu_op_RI = ALU_SLT;
+        end
+        3'b011: begin
+          alu_op_RI = ALU_SLTU;
+        end
+        3'b100: begin
+          alu_op_RI = ALU_XOR;
+        end
+        3'b101: begin
+          alu_op_RI = funct7[5] ? ALU_SRA : ALU_SRL;
+        end
+        3'b110: begin
+          alu_op_RI = ALU_OR;
+        end
+        3'b111: begin
+          alu_op_RI = ALU_AND;
+        end
+        default: begin
+          alu_op_RI = ALU_ADD;
+        end
+
+      endcase
+    end
   end
   // Control signal generation
   always_comb begin

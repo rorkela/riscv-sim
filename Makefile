@@ -29,7 +29,16 @@ gtkwave:
 
 run:
 	./obj_dir/Vtop
+TEST ?=rv32ui-p-add
 TEST_DIR := $(RISCV_TESTS)/isa
+hex_test:
+	riscv-none-elf-objcopy \
+		-O verilog \
+		--change-addresses -0x80000000 \
+		$(TEST_DIR)/$(TEST) \
+		temp_outputs/program.hex || exit 1; \
+	
+
 
 run_tests:
 	@for test in $(filter-out %.dump,$(wildcard $(TEST_DIR)/rv32ui-p-*)); do \
@@ -50,11 +59,25 @@ run_tests:
 			temp_outputs/program.hex || exit 1; \
 		$(MAKE) run || exit 1; \
 	done
+	@for test in $(filter-out %.dump,$(wildcard $(TEST_DIR)/rv32um-p-*)); do \
+		echo "Running $$(basename $$test)"; \
+		riscv-none-elf-objcopy \
+			-O verilog \
+			--change-addresses -0x80000000 \
+			$$test \
+			temp_outputs/program.hex || exit 1; \
+		$(MAKE) run || exit 1; \
+	done
 crun: verilate compile_prog elf_to_hex run gtkwave
 assrun: verilate compile_ass elf_to_hex run gtkwave
 
 BENCHMARK?=crc32
 compile_benchmark:
 	cd $(EMBENCH) && \
-	scons --config-dir=$(abspath $(BOARDSUPPORT)) cc=$(RISCV_PREFIX)gcc cflags='-fdata-sections -ffunction-sections -mabi=ilp32 -march=rv32i_zca' ldflags='-Wl,-gc-sections -Wl,--undefined=_start -mabi=ilp32 -march=rv32i_zca -nostartfiles -T$${CONFIG_DIR}/link.ld' user_libs=-lm bd/src/$(BENCHMARK)/$(BENCHMARK)
+	scons --config-dir=$(abspath $(BOARDSUPPORT)) cc=$(RISCV_PREFIX)gcc cflags='-fdata-sections -ffunction-sections -mabi=ilp32 -march=rv32ic' ldflags='-Wl,-gc-sections -Wl,--undefined=_start -mabi=ilp32 -march=rv32ic -nostartfiles -T$${CONFIG_DIR}/link.ld' user_libs=-lm bd/src/$(BENCHMARK)/$(BENCHMARK)
+	$(RISCV_PREFIX)objcopy -O verilog $(EMBENCH)/bd/src/$(BENCHMARK)/$(BENCHMARK) temp_outputs/program.hex 
+
+compile_benchmark_rv32i:
+	cd $(EMBENCH) && \
+	scons --config-dir=$(abspath $(BOARDSUPPORT)) cc=$(RISCV_PREFIX)gcc cflags='-fdata-sections -ffunction-sections -mabi=ilp32 -march=rv32i' ldflags='-Wl,-gc-sections -Wl,--undefined=_start -mabi=ilp32 -march=rv32i -nostartfiles -T$${CONFIG_DIR}/link.ld' user_libs=-lm bd/src/$(BENCHMARK)/$(BENCHMARK)
 	$(RISCV_PREFIX)objcopy -O verilog $(EMBENCH)/bd/src/$(BENCHMARK)/$(BENCHMARK) temp_outputs/program.hex 

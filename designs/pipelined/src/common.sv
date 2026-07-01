@@ -11,7 +11,11 @@ typedef enum logic [3:0] {
   ALU_SRA,
   ALU_SLT,
   ALU_SLTU,
-  ALU_PASS_2
+  ALU_PASS_2,
+  MUL,
+  MUL_H,
+  MUL_HSU,
+  MUL_HU
 } alu_ctrl_t;
 
 typedef struct packed {

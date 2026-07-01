@@ -3,7 +3,7 @@ module mult (
     input wire reset,
     input logic [31:0] a,
     input logic [31:0] b,
-    input logic [1:0] op,  //00 - not mult | 01 - SS mult | 10 - UU mult
+    input logic [1:0] op,  //00 - not mult | 01 - SS mult | 10 - UU mult | 11 - SU mult
     input logic mult_trig,
     output logic busy,
     output logic [63:0] out
@@ -17,10 +17,10 @@ module mult (
   localparam WAIT = 0, DO = 1, DONE = 2;
   logic [32:0] M_2c;
   assign M_2c = ~M + 33'd1;
-  assign busy = state == DO;
+  assign busy = (state == DO) || (op != 2'b00 && state == WAIT);
   assign out  = acc[63:0];
   logic [32:0] a_tran, b_tran;
-  assign a_tran = {{(op == 2'b01) ? a[31] : 1'b0}, a};
+  assign a_tran = {{(op == 2'b01 || op == 2'b11) ? a[31] : 1'b0}, a};
   assign b_tran = {{(op == 2'b01) ? b[31] : 1'b0}, b};
   always_ff @(posedge clk) begin
     if (reset) begin

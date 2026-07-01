@@ -128,12 +128,16 @@ module top (
   end
   assign alu_a = idex_r.ctrl.alu_src1 ? idex_r.pc : ex_forwarded_rd1;
   assign alu_b = (idex_r.ctrl.alu_src2) ? idex_r.imm : ex_forwarded_rd2;
+  logic alu_busy;
   alu alu_1 (
+      .clk(clk),
+      .reset(reset),
       .a(alu_a),
       .b(alu_b),
       .ctrl(idex_r.ctrl),
       .branch_taken(alu_branch_taken),
-      .alu_out(exmem_w.alu_out)
+      .out(exmem_w.alu_out),
+      .busy(alu_busy)
   );
 
 
@@ -164,6 +168,10 @@ module top (
       ifid_r  <= ifid_r;
       idex_r  <= 0;
       exmem_r <= exmem_w;
+    end else if (alu_busy) begin
+      ifid_r  <= ifid_r;
+      idex_r  <= idex_r;
+      exmem_r <= 0;
     end else if (ex_branch_taken) begin
       ifid_r  <= 0;
       idex_r  <= 0;
@@ -179,7 +187,7 @@ module top (
   assign halt = memwb_r.inst == 32'h00000073;
   always_ff @(posedge clk) begin
     if (reset) pc <= 32'h80000000;
-    else if (stall) begin
+    else if (stall || alu_busy) begin
       pc <= pc;
     end else begin
       case (idex_r.ctrl.pc_type)
